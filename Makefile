@@ -1,2 +1,2 @@
 build-web:
-	cd web && npm run build
+	cd web && npm ci && npm run build
