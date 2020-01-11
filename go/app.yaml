@@ -1,3 +1,1 @@
 runtime: go113
-http_headers:
-  Access-Control-Allow-Origin: '*'

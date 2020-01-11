@@ -4,8 +4,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 )
+
+func checkCOR(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		originHeader := r.Header.Get("Origin")
+		originUrl, _ := url.Parse(originHeader)
+		if strings.HasSuffix(originUrl.Hostname(), ".legalsink.com") {
+			w.Header().Add("Access-Control-Allow-Origin", originHeader)
+		}
+		h.ServeHTTP(w, r)
+	})
+}
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -25,9 +38,11 @@ func docsHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	http.HandleFunc("/", rootHandler)
-	http.HandleFunc("/resource", resourceHandler)
-	http.HandleFunc("/docs", docsHandler)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/resource", resourceHandler)
+	mux.HandleFunc("/docs", docsHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -37,5 +52,5 @@ func main() {
 
 	log.Printf("Listening on port: %s", port)
 
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, checkCOR(mux)))
 }
